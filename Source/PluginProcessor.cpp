@@ -199,13 +199,15 @@ void VcdrAudioProcessor::vocode(const int channel)
     
     forwardFFT.performRealOnlyForwardTransform(fftBuffer, true);
     
+    drawNextFrameOfSpectrum();
+    
     getMagnitudeOfInterleavedComplexArray(fftBuffer);
     smoothSpectrum();
-    
+
     // fft processing
     for (int sample = 0; sample < 2 * fftSize; ++sample)
     {
-        fftBuffer[sample] = fftAudioEnv[sample / 2];
+        fftBuffer[sample] = fftBuffer[sample / 2];
     }
 
     // polowa buffera jest zapelniona zrekonstruowanymi wartosciami
@@ -238,6 +240,27 @@ void VcdrAudioProcessor::multiplyBySineEnvelope(float *array)
 {
     for (int i = 0; i < fftSize; ++i)
         array[i] *= sinenv[i];
+}
+
+void VcdrAudioProcessor::drawNextFrameOfSpectrum()
+{
+    auto mindB = -100.0f;
+    auto maxdB =    0.0f;
+ 
+    for (int i = 0; i < scopeSize; ++i)
+    {
+        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) scopeSize) * 0.2f);
+        auto fftDataIndex = juce::jlimit (0, fftSize / 2, (int) (skewedProportionX * (float) fftSize * 0.5f));
+        auto level = juce::jmap (
+                                 juce::jlimit (mindB,
+                                               maxdB,
+                                               juce::Decibels::gainToDecibels(fftBuffer[fftDataIndex]) - juce::Decibels::gainToDecibels((float) fftSize)),
+                                 mindB, maxdB, 0.0f, 1.0f);
+        
+        scopeData[i] = level;
+    }
+    
+    nextBlockReady = true;
 }
 
 bool VcdrAudioProcessor::hasEditor() const

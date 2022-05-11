@@ -40,12 +40,17 @@ public:
     void smoothSpectrum();
 
     float binAmps[256];
-    int fftSize = 256;
+    const int fftSize = 256;
+    
+    const int scopeSize = 512;
+    bool nextBlockReady = false;
+    float scopeData[512];
     
 private:
     void fillBuffer(const int channel, const int bufferSize, float* channelData);
     void vocode(const int channel);
     void multiplyBySineEnvelope(float *array);
+    void drawNextFrameOfSpectrum();
     
     const int circularBufferSize = 4096;
     juce::AudioBuffer<float> inputBuffer;
@@ -58,7 +63,7 @@ private:
     juce::dsp::FFT forwardFFT;
     juce::dsp::FFT inverseFFT;
     
-    int hopSize = fftSize / 2;
+    const int hopSize = fftSize / 2;
     int hopCount = 0;
     float chunkOne[256];
     float fftBuffer[512];

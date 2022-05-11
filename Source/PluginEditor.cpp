@@ -1,20 +1,10 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-//==============================================================================
 VcdrAudioProcessorEditor::VcdrAudioProcessorEditor (VcdrAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
+    startTimerHz (30);
     setSize (400, 300);
 }
 
@@ -22,19 +12,40 @@ VcdrAudioProcessorEditor::~VcdrAudioProcessorEditor()
 {
 }
 
-//==============================================================================
 void VcdrAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
     g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
+    drawFrame (g);
 }
 
 void VcdrAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+}
+
+void VcdrAudioProcessorEditor::drawFrame(juce::Graphics& g)
+{
+    for (int i = 1; i < audioProcessor.scopeSize; ++i)
+    {
+        auto width  = getLocalBounds().getWidth();
+        auto height = getLocalBounds().getHeight();
+
+        
+        float firstPointX = (float) juce::jmap(i - 1, 0, audioProcessor.scopeSize - 1, 0, width);
+        float secondPointY = (float) juce::jmap (audioProcessor.scopeData[i], 0.0f, 1.0f, 0.0f, (float) height);
+        
+        g.setColour(juce::Colours::orange);
+        //g.drawLine( { firstPointX, firstPointY, secondPointX, secondPointY } );
+        g.drawRect(firstPointX, 0.0f, 1.0f, secondPointY);
+    }
+}
+
+void VcdrAudioProcessorEditor::timerCallback()
+{
+    if (audioProcessor.nextBlockReady)
+    {
+        audioProcessor.nextBlockReady = false;
+        repaint();
+    }
 }
